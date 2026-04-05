@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>재무 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg:       #f7f7f5;
+  --surface:  #ffffff;
+  --surface2: #f2f1ef;
+  --border:   rgba(0,0,0,0.10);
+  --border2:  rgba(0,0,0,0.18);
+  --text:     #1a1a18;
+  --text2:    #666662;
+  --text3:    #9a9994;
+  --green:    #0f7a5a;
+  --green-lt: #e4f5ee;
+  --green-md: #1D9E75;
+  --blue:     #1a5fa8;
+  --blue-lt:  #e6f0fb;
+  --red:      #c1420c;
+  --red-lt:   #fdeee6;
+  --amber:    #9a6000;
+  --amber-lt: #fdf3e0;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#141413;--surface:#1f1f1d;--surface2:#2a2a27;
+    --border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.18);
+    --text:#f0efe8;--text2:#9a9994;--text3:#5a5a56;
+    --green:#1D9E75;--green-lt:#0a2e20;--green-md:#1D9E75;
+    --blue:#378ADD;--blue-lt:#0d2340;--red:#e87040;--red-lt:#2e1408;
+    --amber:#e0a030;--amber-lt:#2a1e04;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Noto Sans KR','DM Sans',sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;
+}
+/* ── Header ── */
+.app-header{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+  position:sticky;top:0;z-index:100;
+}
+.header-inner{
+  max-width:920px;margin:0 auto;
+  display:flex;align-items:center;gap:24px;height:56px;
+}
+.app-logo{
+  font-family:'DM Mono','DM Sans',monospace;
+  font-size:14px;font-weight:500;color:var(--green-md);
+  letter-spacing:-0.02em;white-space:nowrap;
+}
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:3px;}
+.tab-btn{
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:13px;font-weight:500;padding:6px 16px;
+  border:none;border-radius:6px;cursor:pointer;
+  background:transparent;color:var(--text2);
+  transition:all .18s;white-space:nowrap;
+}
+.tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+/* ── Layout ── */
+.page{display:none;padding:28px 24px 60px;}
+.page.active{display:block;}
+.container{max-width:920px;margin:0 auto;}
+.page-title{font-size:22px;font-weight:500;margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--text3);margin-bottom:24px;}
+/* ── Cards ── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:20px 24px;
+  margin-bottom:16px;
+}
+.card-title{font-size:12px;font-weight:500;color:var(--text3);margin-bottom:14px;letter-spacing:.04em;text-transform:uppercase;}
+/* ── Controls ── */
+.ctrl-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.ctrl-label{font-size:13px;color:var(--text2);min-width:80px;}
+.ctrl-val{font-size:13px;font-weight:500;font-family:'DM Mono',monospace;min-width:100px;text-align:right;color:var(--text);}
+input[type=range]{
+  flex:1;height:4px;cursor:pointer;
+  -webkit-appearance:none;background:var(--surface2);border-radius:2px;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;
+  border-radius:50%;background:var(--green-md);
+  border:3px solid var(--surface);box-shadow:0 0 0 1px var(--green-md);
+}
+input[type=range]::-moz-range-thumb{
+  width:18px;height:18px;border-radius:50%;
+  background:var(--green-md);border:3px solid var(--surface);
+}
+/* ── Hero stat ── */
+.hero{
+  background:linear-gradient(135deg,var(--green-lt) 0%,var(--surface) 100%);
+  border:1px solid var(--border);border-radius:var(--r-xl);
+  padding:24px 28px;margin-bottom:16px;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;
+}
+.hero-main .lbl{font-size:12px;color:var(--text3);}
+.hero-main .val{font-size:32px;font-weight:500;font-family:'DM Mono',monospace;color:var(--green-md);line-height:1.2;}
+.hero-main .sub{font-size:12px;color:var(--text3);margin-top:3px;}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap;}
+.mini .ml{font-size:11px;color:var(--text3);}
+.mini .mv{font-size:16px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);}
+/* ── Grid ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media(max-width:640px){.grid2{grid-template-columns:1fr;}.grid3{grid-template-columns:1fr 1fr;}}
+/* ── Stat cards ── */
+.stat-card{background:var(--surface2);border-radius:var(--r-md);padding:12px 16px;}
+.stat-lbl{font-size:11px;color:var(--text3);margin-bottom:5px;}
+.stat-val{font-size:18px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:3px;}
+/* ── Stacked bar ── */
+.stack-wrap{display:flex;height:32px;border-radius:8px;overflow:hidden;margin:12px 0 6px;}
+.stack-seg{height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:width .3s;}
+.seg-lbl{font-size:11px;font-weight:500;color:#fff;white-space:nowrap;font-family:'DM Mono',monospace;}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11px;color:var(--text2);}
+.leg-i{display:flex;align-items:center;gap:5px;}
+.leg-d{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+/* ── P&L table ── */
+.pl-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
+.pl-row:last-child{border-bottom:none;}
+.pl-name{font-size:13px;color:var(--text2);}
+.pl-formula{font-size:10px;color:var(--text3);margin-top:1px;}
+.pl-val{font-size:14px;font-weight:500;font-family:'DM Mono',monospace;text-align:right;}
+.pl-sub{font-size:10px;color:var(--text3);text-align:right;}
+.pl-hl{background:var(--surface2);border-radius:8px;padding:8px 12px;margin:2px -6px;}
+.pl-hl .pl-name{font-weight:500;color:var(--text);}
+/* ── Tax brackets ── */
+.br-row{display:flex;align-items:center;gap:6px;margin:4px 0;}
+.br-label{font-size:11px;min-width:62px;color:var(--text3);}
+.br-bar-bg{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+.br-bar{height:100%;border-radius:3px;}
+.br-pct{font-size:11px;min-width:32px;text-align:right;color:var(--text3);font-family:'DM Mono',monospace;}
+.br-cur-tag{font-size:10px;color:var(--green-md);font-weight:500;}
+.br-active .br-label,.br-active .br-pct{color:var(--text);font-weight:500;}
+/* ── Toggle ── */
+.toggle-row{display:flex;gap:0;background:var(--surface2);border-radius:8px;padding:3px;width:fit-content;margin-bottom:16px;}
+.tog{font-size:13px;font-weight:500;padding:6px 18px;border:none;border-radius:6px;cursor:pointer;background:transparent;color:var(--text2);transition:all .18s;}
+.tog.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+/* ── Expense cards ── */
+.exp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+@media(max-width:600px){.exp-grid{grid-template-columns:1fr 1fr;}}
+.exp-card{background:var(--surface2);border-radius:var(--r-md);padding:10px 13px;}
+.exp-name{font-size:11px;color:var(--text2);margin-bottom:6px;}
+.exp-inp-row{display:flex;align-items:baseline;gap:4px;}
+.exp-inp{
+  font-size:15px;font-weight:500;font-family:'DM Mono',monospace;
+  color:var(--text);border:none;border-bottom:1px solid var(--border2);
+  background:transparent;outline:none;width:100%;padding:1px 0;
+}
+.exp-unit{font-size:11px;color:var(--text3);}
+.exp-pct{font-size:10px;color:var(--green-md);margin-top:4px;font-family:'DM Mono',monospace;}
+/* ── Revenue input ── */
+.rev-row{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
+.rev-lbl{font-size:13px;color:var(--text2);min-width:64px;}
+.rev-inp{
+  font-size:28px;font-weight:500;font-family:'DM Mono',monospace;
+  color:var(--text);border:none;border-bottom:2px solid var(--green-md);
+  background:transparent;outline:none;width:170px;padding:2px 0;
+}
+.rev-unit{font-size:15px;color:var(--text2);}
+.rev-conv{font-size:13px;color:var(--green-md);font-weight:500;font-family:'DM Mono',monospace;}
+/* ── Preset buttons ── */
+.preset-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.preset-btn{
+  font-size:12px;padding:4px 12px;border-radius:20px;
+  border:1px solid var(--border2);background:transparent;
+  color:var(--text2);cursor:pointer;font-family:'DM Mono',monospace;
+  transition:all .15s;
+}
+.preset-btn:hover{background:var(--surface2);}
+.preset-btn.active{border-color:var(--green-md);color:var(--green-md);background:var(--green-lt);}
+/* ── Eff grid ── */
+.eff-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.eff-card{background:var(--surface2);border-radius:var(--r-md);padding:10px 13px;}
+.eff-lbl{font-size:10px;color:var(--text3);margin-bottom:4px;}
+.eff-val{font-size:18px;font-weight:500;font-family:'DM Mono',monospace;}
+/* ── Footer note ── */
+.note{font-size:11px;color:var(--text3);text-align:center;margin-top:20px;}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input[type=number]{-moz-appearance:textfield;}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="app-logo">FINTOOLS·KR</div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('compound')">복리 계산기</button>
+      <button class="tab-btn" onclick="showTab('pl')">개인사업자 손익</button>
+    </div>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════
+     TAB 1 : 복리 계산기
+════════════════════════════════════ -->
+<div class="page active" id="tab-compound">
+<div class="container">
+  <div class="page-title">복리 계산기</div>
+  <div class="page-sub">초기 투자금과 연간 추가납입을 설정해 장기 복리 효과를 확인하세요</div>
+
+  <div class="card">
+    <div class="card-title">투자 설정</div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">초기 투자금</span>
+      <input type="range" id="c-principal" min="1000" max="50000" step="500" value="10000">
+      <span class="ctrl-val" id="c-principalVal">1억원</span>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">연간 추가납입</span>
+      <input type="range" id="c-annual" min="0" max="5000" step="100" value="1200">
+      <span class="ctrl-val" id="c-annualVal">1,200만원</span>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">연이율</span>
+      <input type="range" id="c-rate" min="1" max="20" step="1" value="7">
+      <span class="ctrl-val" id="c-rateVal">7%</span>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">투자 기간</span>
+      <input type="range" id="c-years" min="1" max="40" step="1" value="20">
+      <span class="ctrl-val" id="c-yearsVal">20년</span>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-main">
+      <div class="lbl">복리 최종금액</div>
+      <div class="val" id="c-final">—</div>
+      <div class="sub" id="c-netGain">총 수익: —</div>
+    </div>
+    <div class="hero-stats">
+      <div class="mini"><div class="ml">총 납입금</div><div class="mv" id="c-totalIn">—</div></div>
+      <div class="mini"><div class="ml">원금만 복리</div><div class="mv" id="c-principalOnly">—</div></div>
+      <div class="mini"><div class="ml">72의 법칙</div><div class="mv" id="c-rule72">—</div></div>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-bottom:16px;">
+    <div class="stat-card">
+      <div class="stat-lbl">총 납입금 대비 수익률</div>
+      <div class="stat-val" id="c-gainRatio">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">연간 추가납입 효과</div>
+      <div class="stat-val" id="c-annualGain">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">원금 운용 수익</div>
+      <div class="stat-val" id="c-principalGain">—</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">성장 추이</div>
+    <div style="display:flex;gap:14px;margin-bottom:10px;font-size:12px;color:var(--text2);">
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:3px;border-radius:2px;background:#888780;display:inline-block;"></span>총 납입금</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:3px;border-radius:2px;background:#378ADD;display:inline-block;"></span>원금만 복리</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:3px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>원금+추가납입 복리</span>
+    </div>
+    <div style="position:relative;width:100%;height:260px;">
+      <canvas id="compoundChart"></canvas>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════
+     TAB 2 : 개인사업자 손익
+════════════════════════════════════ -->
+<div class="page" id="tab-pl">
+<div class="container">
+  <div class="page-title">개인사업자 손익 계산기</div>
+  <div class="page-sub">2024년 세법 기준 · 종합소득세 / 국민연금(지역) / 건강보험(지역) 포함</div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+      <div class="toggle-row">
+        <button class="tog on" id="tog-m" onclick="setMode('month')">월간</button>
+        <button class="tog" id="tog-y" onclick="setMode('year')">연간</button>
+      </div>
+      <span style="font-size:12px;color:var(--text3);" id="mode-hint">월 매출 입력 → 연간 기준 세금 계산</span>
+    </div>
+    <div class="rev-row">
+      <span class="rev-lbl">매출액</span>
+      <input class="rev-inp" type="number" id="p-revenue" value="2000" min="0" step="100">
+      <span class="rev-unit">만원</span>
+      <span class="rev-conv" id="p-rev-conv"></span>
+    </div>
+
+    <div style="border-top:1px solid var(--border);margin:16px 0 14px;"></div>
+    <div class="card-title" style="margin-bottom:12px;">비용 항목</div>
+    <div class="exp-grid">
+      <div class="exp-card"><div class="exp-name">매입원가 / 재료비</div><div class="exp-inp-row"><input class="exp-inp" type="number" id="p-cogs" value="600" min="0" step="10"><span class="exp-unit">만원</span></div><div class="exp-pct" id="pp-cogs">—</div></div>
+      <div class="exp-card"><div class="exp-name">인건비 (직원 급여)</div><div class="exp-inp-row"><input class="exp-inp" type="number" id="p-labor" value="400" min="0" step="10"><span class="exp-unit">만원</span></div><div class="exp-pct" id="pp-labor">—</div></div>
+      <div class="exp-card"><div class="exp-name">임차료 (월세)</div><div class="exp-inp-row"><input class="exp-inp" type="number" id="p-rent" value="150" min="0" step="10"><span class="exp-unit">만원</span></div><div class="exp-pct" id="pp-rent">—</div></div>
+      <div class="exp-card"><div class="exp-name">광고 / 마케팅비</div><div class="exp-inp-row"><input class="exp-inp" type="number" id="p-ad" value="100" min="0" step="10"><span class="exp-unit">만원</span></div><div class="exp-pct" id="pp-ad">—</div></div>
+      <div class="exp-card"><div class="exp-name">감가상각 / 리스</div><div class="exp-inp-row"><input class="exp-inp" type="number" id="p-depr" value="50" min="0" step="10"><span class="exp-unit">만원</span></div><div class="exp-pct" id="pp-depr">—</div></div>
+      <div class="exp-card"><div class="exp-name">기타 경비</div><div class="exp-inp-row"><input class="exp-inp" type="number" id="p-other" value="100" min="0" step="10"><span class="exp-unit">만원</span></div><div class="exp-pct" id="pp-other">—</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">매출 구성 비율</div>
+    <div class="stack-wrap" id="p-stacked"></div>
+    <div class="legend" id="p-legend"></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:16px;">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">손익 계산서 (연간)</div>
+      <div class="pl-row"><div><div class="pl-name">매출액</div></div><div><div class="pl-val" style="color:var(--green-md);" id="pl-rev">—</div><div class="pl-sub" id="pl-rev-s"></div></div></div>
+      <div class="pl-row"><div><div class="pl-name">(-) 매입원가</div></div><div><div class="pl-val" style="color:var(--red);" id="pl-cogs">—</div><div class="pl-sub" id="pl-cogs-s"></div></div></div>
+      <div class="pl-row pl-hl"><div><div class="pl-name">매출총이익</div><div class="pl-formula">매출 - 원가</div></div><div><div class="pl-val" id="pl-gross">—</div><div class="pl-sub" id="pl-gross-s"></div></div></div>
+      <div class="pl-row"><div><div class="pl-name">(-) 판매관리비</div><div class="pl-formula">인건비+임차료+광고+기타</div></div><div><div class="pl-val" style="color:var(--red);" id="pl-opex">—</div><div class="pl-sub" id="pl-opex-s"></div></div></div>
+      <div class="pl-row pl-hl"><div><div class="pl-name">영업이익 (사업소득)</div><div class="pl-formula">매출총이익 - 판관비</div></div><div><div class="pl-val" id="pl-op">—</div><div class="pl-sub" id="pl-op-s"></div></div></div>
+      <div class="pl-row"><div><div class="pl-name">(-) 종합소득세</div><div class="pl-formula" id="pl-itax-r">누진세</div></div><div><div class="pl-val" style="color:var(--red);" id="pl-itax">—</div><div class="pl-sub" id="pl-itax-s"></div></div></div>
+      <div class="pl-row"><div><div class="pl-name">(-) 지방소득세</div><div class="pl-formula">소득세 × 10%</div></div><div><div class="pl-val" style="color:var(--red);" id="pl-ltax">—</div><div class="pl-sub" id="pl-ltax-s"></div></div></div>
+      <div class="pl-row"><div><div class="pl-name">(-) 국민연금</div><div class="pl-formula">기준소득 × 9% (지역)</div></div><div><div class="pl-val" style="color:var(--red);" id="pl-pension">—</div><div class="pl-sub" id="pl-pension-s"></div></div></div>
+      <div class="pl-row"><div><div class="pl-name">(-) 건강보험+장기요양</div><div class="pl-formula">소득 × 7.09% (지역)</div></div><div><div class="pl-val" style="color:var(--red);" id="pl-health">—</div><div class="pl-sub" id="pl-health-s"></div></div></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title">소득세 과세 구간</div>
+        <div id="p-brackets"></div>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title">실효 부담률</div>
+        <div class="eff-grid">
+          <div class="eff-card"><div class="eff-lbl">세금 부담률</div><div class="eff-val" style="color:var(--red);" id="p-tax-eff">—</div></div>
+          <div class="eff-card"><div class="eff-lbl">보험 부담률</div><div class="eff-val" style="color:var(--blue);" id="p-ins-eff">—</div></div>
+          <div class="eff-card"><div class="eff-lbl">비용률</div><div class="eff-val" id="p-exp-eff">—</div></div>
+          <div class="eff-card"><div class="eff-lbl">순이익률</div><div class="eff-val" style="color:var(--green-md);" id="p-net-eff">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-main">
+      <div class="lbl">연간 순이익 (세후)</div>
+      <div class="val" id="p-net-annual">—</div>
+      <div class="sub" id="p-net-sub">—</div>
+    </div>
+    <div class="hero-stats">
+      <div class="mini"><div class="ml">월 순이익</div><div class="mv" id="p-net-m">—</div></div>
+      <div class="mini"><div class="ml">일 순이익</div><div class="mv" id="p-net-d">—</div></div>
+    </div>
+  </div>
+
+  <p class="note">※ 참고용 계산기입니다. 공제 항목에 따라 실제 세액은 다를 수 있습니다.</p>
+</div>
+</div>
+
+<script>
+/* ── Utilities ── */
+function wan(n){return Math.round(n).toLocaleString()+'만원';}
+function wanM(n){return Math.round(n).toLocaleString()+'만';}
+function pct(n){return isFinite(n)?n.toFixed(1)+'%':'—';}
+function g(id){return Math.max(0,parseFloat(document.getElementById(id).value)||0);}
+function setEl(id,v){document.getElementById(id).textContent=v;}
+function fmtBig(n){
+  if(n>=100000)return(n/10000).toFixed(1)+'억';
+  if(n>=10000)return(n/10000).toFixed(2)+'억';
+  return wanM(n)+'만';
+}
+
+/* ── Tab switch ── */
+function showTab(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+/* ══════════════════════════════════
+   복리 계산기
+══════════════════════════════════ */
+let compChart;
+function calcCompound(){
+  const P=+document.getElementById('c-principal').value;
+  const A=+document.getElementById('c-annual').value;
+  const r=+document.getElementById('c-rate').value/100;
+  const T=+document.getElementById('c-years').value;
+  const rate=+document.getElementById('c-rate').value;
+
+  setEl('c-principalVal', P>=10000?(P/10000).toFixed(P%10000===0?0:1)+'억원':wan(P));
+  setEl('c-annualVal', A===0?'없음':wan(A)+'/년');
+  setEl('c-rateVal', rate+'%');
+  setEl('c-yearsVal', T+'년');
+
+  const labels=Array.from({length:T+1},(_,i)=>i+'년');
+  const totalInData=labels.map((_,i)=>P+A*i);
+  const principalOnly=labels.map((_,i)=>Math.round(P*Math.pow(1+r,i)));
+  const compoundData=labels.map((_,i)=>{
+    let tot=P*Math.pow(1+r,i);
+    for(let k=1;k<=i;k++)tot+=A*Math.pow(1+r,i-k);
+    return Math.round(tot);
+  });
+
+  const fin=compoundData[T];
+  const totIn=totalInData[T];
+  const pOnly=principalOnly[T];
+
+  setEl('c-final', wanM(fin)+'원');
+  setEl('c-netGain', '총 수익: +'+wanM(fin-totIn)+'원');
+  setEl('c-totalIn', wanM(totIn)+'원');
+  setEl('c-principalOnly', wanM(pOnly)+'원');
+  setEl('c-rule72', (72/rate).toFixed(1)+'년에 2배');
+  setEl('c-gainRatio', '+'+((fin/totIn-1)*100).toFixed(1)+'%');
+  setEl('c-annualGain', '+'+wanM(Math.max(0,fin-pOnly-(A*T)))+'원');
+  setEl('c-principalGain', '+'+wanM(pOnly-P)+'원');
+
+  if(compChart)compChart.destroy();
+  compChart=new Chart(document.getElementById('compoundChart'),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'총 납입금',data:totalInData,borderColor:'#888780',borderWidth:1.5,borderDash:[4,4],pointRadius:0,fill:false,tension:0},
+        {label:'원금만 복리',data:principalOnly,borderColor:'#378ADD',borderWidth:2,pointRadius:0,fill:false,tension:0.15},
+        {label:'원금+추가납입',data:compoundData,borderColor:'#1D9E75',borderWidth:2.5,pointRadius:0,backgroundColor:'rgba(29,158,117,0.07)',fill:true,tension:0.15},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+wanM(ctx.raw)+'원'}}},
+      scales:{
+        x:{grid:{display:false},ticks:{maxTicksLimit:9,font:{size:11}}},
+        y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{font:{size:11},callback:v=>fmtBig(v)}}
+      }
+    }
+  });
+}
+['c-principal','c-annual','c-rate','c-years'].forEach(id=>document.getElementById(id).addEventListener('input',calcCompound));
+calcCompound();
+
+/* ══════════════════════════════════
+   개인사업자 손익
+══════════════════════════════════ */
+const BRACKETS=[
+  {min:0,max:1400,rate:0.06,label:'~1,400만',color:'#B5D4F4'},
+  {min:1400,max:5000,rate:0.15,label:'~5,000만',color:'#85B7EB'},
+  {min:5000,max:8800,rate:0.24,label:'~8,800만',color:'#378ADD'},
+  {min:8800,max:15000,rate:0.35,label:'~1.5억',color:'#185FA5'},
+  {min:15000,max:30000,rate:0.38,label:'~3억',color:'#D85A30'},
+  {min:30000,max:50000,rate:0.40,label:'~5억',color:'#993C1D'},
+  {min:50000,max:100000,rate:0.42,label:'~10억',color:'#712B13'},
+  {min:100000,max:Infinity,rate:0.45,label:'10억+',color:'#4A1B0C'},
+];
+let plMode='month';
+function setMode(m){
+  plMode=m;
+  document.getElementById('tog-m').classList.toggle('on',m==='month');
+  document.getElementById('tog-y').classList.toggle('on',m==='year');
+  setEl('mode-hint',m==='month'?'월 매출 입력 → 연간 기준 세금 계산':'연간 매출 입력 기준');
+  calcPL();
+}
+function calcIncomeTax(taxBase){
+  if(taxBase<=0)return{tax:0,bracketIdx:0};
+  const prevs=[0,1400,5000,8800,15000,30000,50000,100000];
+  const prevTax=[0,84,624,1536,3706,9406,17406,38406];
+  const rates=[0.06,0.15,0.24,0.35,0.38,0.40,0.42,0.45];
+  let tax=0,bi=0;
+  for(let i=rates.length-1;i>=0;i--){
+    if(taxBase>prevs[i]){tax=prevTax[i]+(taxBase-prevs[i])*rates[i];bi=i;break;}
+  }
+  return{tax:Math.max(0,tax),bracketIdx:bi};
+}
+function calcPL(){
+  const rawRev=g('p-revenue');
+  const aRev=plMode==='month'?rawRev*12:rawRev;
+  const mRev=plMode==='month'?rawRev:rawRev/12;
+  const mF=plMode==='month'?12:1;
+  const aC=g('p-cogs')*mF,aL=g('p-labor')*mF,aR=g('p-rent')*mF;
+  const aA=g('p-ad')*mF,aD=g('p-depr')*mF,aO=g('p-other')*mF;
+  const totExp=aC+aL+aR+aA+aD+aO;
+  const opex=aL+aR+aA+aD+aO;
+  const gp=aRev-aC;
+  const op=gp-opex;
+  const taxBase=Math.max(0,op-150);
+  const{tax:itax,bracketIdx}=calcIncomeTax(taxBase);
+  const ltax=itax*0.1;
+  const totTax=itax+ltax;
+  const mOp=op/12;
+  const pensBase=Math.min(Math.max(mOp,37),590);
+  const aPension=pensBase*0.09*12;
+  const aHealth=(op/12)*0.0709*12;
+  const aLTC=aHealth*0.1295;
+  const totIns=aPension+aHealth+aLTC;
+  const totBurden=totTax+totIns;
+  const netA=op-totBurden;
+  const r=aRev||1;
+
+  setEl('p-rev-conv',plMode==='month'?'(연 '+wanM(aRev)+')':'(월 '+wanM(Math.round(mRev))+')');
+  const expMap={cogs:aC,labor:aL,rent:aR,ad:aA,depr:aD,other:aO};
+  Object.keys(expMap).forEach(k=>setEl('pp-'+k,aRev>0?'매출 대비 '+pct(expMap[k]/r*100):'—'));
+
+  setEl('pl-rev',wan(aRev)); setEl('pl-rev-s','연간');
+  setEl('pl-cogs','-'+wan(aC)); setEl('pl-cogs-s',pct(aC/r*100));
+  const gpEl=document.getElementById('pl-gross');
+  gpEl.textContent=wan(gp); gpEl.style.color=gp>=0?'var(--green-md)':'var(--red)';
+  setEl('pl-gross-s',pct(gp/r*100));
+  setEl('pl-opex','-'+wan(opex)); setEl('pl-opex-s',pct(opex/r*100));
+  const opEl=document.getElementById('pl-op');
+  opEl.textContent=wan(op); opEl.style.color=op>=0?'var(--green-md)':'var(--red)';
+  setEl('pl-op-s',pct(op/r*100));
+  setEl('pl-itax','-'+wan(itax)); setEl('pl-itax-s',pct(itax/r*100));
+  setEl('pl-itax-r','과표 '+wanM(taxBase)+'원 / '+pct(BRACKETS[bracketIdx].rate*100));
+  setEl('pl-ltax','-'+wan(ltax)); setEl('pl-ltax-s',pct(ltax/r*100));
+  setEl('pl-pension','-'+wan(aPension)); setEl('pl-pension-s',pct(aPension/r*100));
+  setEl('pl-health','-'+wan(aHealth+aLTC)); setEl('pl-health-s',pct((aHealth+aLTC)/r*100));
+  setEl('p-tax-eff',pct(totTax/r*100));
+  setEl('p-ins-eff',pct(totIns/r*100));
+  setEl('p-exp-eff',pct(totExp/r*100));
+  setEl('p-net-eff',pct(netA/r*100));
+  const netEl=document.getElementById('p-net-annual');
+  netEl.textContent=wan(netA); netEl.style.color=netA>=0?'var(--green-md)':'var(--red)';
+  setEl('p-net-sub','영업이익 '+wan(op)+' / 세금+보험 '+wan(totBurden));
+  setEl('p-net-m',wanM(Math.round(netA/12))+'원');
+  setEl('p-net-d',wanM(Math.round(netA/365))+'원');
+
+  const segs=[
+    {label:'원가',val:aC,color:'#F09595'},
+    {label:'인건비',val:aL,color:'#85B7EB'},
+    {label:'임차료',val:aR,color:'#AFA9EC'},
+    {label:'광고',val:aA,color:'#FAC775'},
+    {label:'기타',val:aD+aO,color:'#B4B2A9'},
+    {label:'세금',val:totTax,color:'#D85A30'},
+    {label:'보험',val:totIns,color:'#378ADD'},
+    {label:'순이익',val:Math.max(0,netA),color:'#1D9E75'},
+  ];
+  const tot=segs.reduce((s,x)=>s+x.val,0)||1;
+  let sh='',lh='';
+  segs.forEach(s=>{
+    const p=(s.val/tot*100);
+    sh+=`<div class="stack-seg" style="width:${p.toFixed(2)}%;background:${s.color};"><span class="seg-lbl">${p>=7?s.label+' '+p.toFixed(0)+'%':''}</span></div>`;
+    lh+=`<div class="leg-i"><span class="leg-d" style="background:${s.color};"></span>${s.label} ${pct(p)}</div>`;
+  });
+  document.getElementById('p-stacked').innerHTML=sh;
+  document.getElementById('p-legend').innerHTML=lh;
+
+  let bHtml='';
+  BRACKETS.forEach((b,i)=>{
+    const isA=i===bracketIdx&&op>0;
+    const filled=i<bracketIdx?100:isA?100:0;
+    bHtml+=`<div class="br-row ${isA?'br-active':''}">
+      <span class="br-label">${b.label}</span>
+      <div class="br-bar-bg"><div class="br-bar" style="width:${filled}%;background:${b.color};"></div></div>
+      <span class="br-pct">${pct(b.rate*100)}</span>
+      ${isA?`<span class="br-cur-tag">◀</span>`:''}
+    </div>`;
+  });
+  document.getElementById('p-brackets').innerHTML=bHtml;
+}
+document.querySelectorAll('[id^="p-"]').forEach(el=>{
+  if(el.tagName==='INPUT')el.addEventListener('input',calcPL);
+});
+calcPL();
+</script>
+</body>
+</html>
